@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Minute Song Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            background: linear-gradient(90deg, #e94560, #f39c12);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #e0e0e0;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #e94560, #f39c12);
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result h2 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            color: #f39c12;
+        }
+
+        .sequence {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .part {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 80px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .part-A { background: #e94560; }
+        .part-B { background: #f39c12; }
+        .part-C { background: #3498db; }
+        .part-D { background: #9b59b6; }
+        .part-E { background: #1abc9c; }
+
+        .part-details {
+            font-size: 0.75rem;
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #e94560;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #b0b0b0;
+            margin-top: 5px;
+        }
+
+        .time-signatures {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #b0b0b0;
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 One Minute Song Generator</h1>
+        
+        <div class="input-group">
+            <label for="bpm">Enter BPM (Beats Per Minute)</label>
+            <input type="number" id="bpm" min="40" max="300" value="120" placeholder="e.g., 120">
+        </div>
+        
+        <button onclick="generateSequence()">Generate Sequence</button>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="result" id="result">
+            <h2>Generated Sequence</h2>
+            <div class="sequence" id="sequence"></div>
+            
+            <div class="time-signatures" id="timeSignatures"></div>
+            
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="totalBars">0</div>
+                    <div class="stat-label">Total Bars</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="totalBeats">0</div>
+                    <div class="stat-label">Total Beats</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="duration">1:00</div>
+                    <div class="stat-label">Duration</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="partCount">0</div>
+                    <div class="stat-label">Parts</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Common time signatures (beats per bar)
+        const TIME_SIGNATURES = [
+            { beats: 4, name: '4/4' },
+            { beats: 3, name: '3/4' },
+            { beats: 2, name: '2/4' },
+            { beats: 6, name: '6/8' },
+            { beats: 5, name: '5/4' },
+            { beats: 7, name: '7/8' },
+            { beats: 9, name: '9/8' }
+        ];
+
+        const PART_NAMES = ['A', 'B', 'C', 'D', 'E'];
+
+        function generateSequence() {
+            const bpmInput = document.getElementById('bpm');
+            const errorDiv = document.getElementById('error');
+            const resultDiv = document.getElementById('result');
+            
+            const bpm = parseInt(bpmInput.value);
+            
+            // Validation
+            if (isNaN(bpm) || bpm < 40 || bpm > 300) {
+                errorDiv.textContent = 'Please enter a valid BPM between 40 and 300';
+                errorDiv.classList.add('show');
+                resultDiv.classList.remove('show');
+                return;
+            }
+            
+            errorDiv.classList.remove('show');
+            
+            // Calculate total beats (exactly 1 minute)
+            const totalBeats = bpm;
+            
+            // Generate the sequence
+            const sequence = generatePartSequence(totalBeats);
+            
+            // Display the result
+            displaySequence(sequence, bpm);
+        }
+
+        function generatePartSequence(totalBeats) {
+            // Pre-define consistent part structures
+            const partDefinitions = definePartStructures(totalBeats);
+            
+            const sequence = [];
+            let remainingBeats = totalBeats;
+            let maxPartIndexUsed = 0; // Tracks the highest part letter used so far
+            
+            while (remainingBeats > 0) {
+                // Decide which part to use next
+                const nextPartIndex = selectNextPart(maxPartIndexUsed, sequence);
+                const partName = PART_NAMES[nextPartIndex];
+                const partDef = partDefinitions[partName];
+                
+                // Update max part index if we're using a new part
+                if (nextPartIndex > maxPartIndexUsed) {
+                    maxPartIndexUsed = nextPartIndex;
+                }
+                
+                // Use the pre-defined part if it fits
+                if (partDef.beats <= remainingBeats) {
+                    sequence.push({
+                        name: partName,
+                        bars: partDef.bars,
+                        beats: partDef.beats,
+                        timeSignature: partDef.timeSignature
+                    });
+                    remainingBeats -= partDef.beats;
+                } else {
+                    // Part doesn't fit - create a smaller version of this part
+                    const beatsPerBar = getBeatsPerBar(partDef.timeSignature);
+                    const barsNeeded = Math.ceil(remainingBeats / beatsPerBar);
+                    sequence.push({
+                        name: partName,
+                        bars: barsNeeded,
+                        beats: remainingBeats,
+                        timeSignature: partDef.timeSignature
+                    });
+                    remainingBeats = 0;
+                }
+                
+                if (sequence.length > 20) break;
+            }
+            
+            return sequence;
+        }
+
+        function selectNextPart(maxPartIndexUsed, sequence) {
+            // Always start with part A
+            if (sequence.length === 0) {
+                return 0;
+            }
+            
+            // Available parts: 0 to maxPartIndexUsed (inclusive)
+            // Or maxPartIndexUsed + 1 if we want to introduce a new part
+            
+            const availableParts = [];
+            
+            // Add all parts that have been introduced
+            for (let i = 0; i <= maxPartIndexUsed; i++) {
+                availableParts.push(i);
+            }
+            
+            // Add the next new part if it exists
+            if (maxPartIndexUsed + 1 < PART_NAMES.length) {
+                availableParts.push(maxPartIndexUsed + 1);
+            }
+            
+            // Weight towards introducing new parts early, then random
+            if (maxPartIndexUsed < 2 && Math.random() > 0.3) {
+                return maxPartIndexUsed + 1;
+            }
+            
+            // Random selection from available parts
+            const randomIndex = Math.floor(Math.random() * availableParts.length);
+            return availableParts[randomIndex];
+        }
+
+        function getBeatsPerBar(timeSignature) {
+            const match = timeSignature.match(/^(\d+)/);
+            return match ? parseInt(match[1]) : 4;
+        }
+
+        function definePartStructures(totalBeats) {
+            const definitions = {};
+            
+            // Define each part with consistent structure
+            for (let i = 0; i < PART_NAMES.length; i++) {
+                const partName = PART_NAMES[i];
+                definitions[partName] = generatePartDefinition(totalBeats);
+            }
+            
+            return definitions;
+        }
+
+        function generatePartDefinition(totalBeats) {
+            // Prefer 4/4 when possible
+            if (totalBeats >= 4 && Math.random() > 0.3) {
+                const bars = Math.min(Math.floor(totalBeats / 8), 4);
+                if (bars > 0) {
+                    return {
+                        bars: Math.max(bars, 1),
+                        beats: Math.max(bars, 1) * 4,
+                        timeSignature: '4/4'
+                    };
+                }
+            }
+            
+            // Find the best fitting time signature
+            const possibleSignatures = TIME_SIGNATURES.filter(ts => ts.beats <= totalBeats);
+            
+            if (possibleSignatures.length === 0) {
+                return {
+                    bars: 1,
+                    beats: 4,
+                    timeSignature: '4/4'
+                };
+            }
+            
+            // Weight towards simpler time signatures
+            const weights = possibleSignatures.map((ts) => {
+                if (ts.beats === 4) return 5;
+                if (ts.beats === 3) return 3;
+                if (ts.beats === 2) return 2;
+                return 1;
+            });
+            
+            const totalWeight = weights.reduce((a, b) => a + b, 0);
+            let random = Math.random() * totalWeight;
+            
+            let selectedIndex = 0;
+            for (let i = 0; i < weights.length; i++) {
+                random -= weights[i];
+                if (random <= 0) {
+                    selectedIndex = i;
+                    break;
+                }
+            }
+            
+            const selectedSignature = possibleSignatures[selectedIndex];
+            const bars = Math.floor(Math.random() * 3) + 1;
+            
+            return {
+                bars: bars,
+                beats: bars * selectedSignature.beats,
+                timeSignature: selectedSignature.name
+            };
+        }
+
+        function displaySequence(sequence, bpm) {
+            const sequenceDiv = document.getElementById('sequence');
+            const timeSignaturesDiv = document.getElementById('timeSignatures');
+            const totalBarsDiv = document.getElementById('totalBars');
+            const totalBeatsDiv = document.getElementById('totalBeats');
+            const partCountDiv = document.getElementById('partCount');
+            const resultDiv = document.getElementById('result');
+            
+            // Clear previous results
+            sequenceDiv.innerHTML = '';
+            
+            // Display each part
+            sequence.forEach((part, index) => {
+                const partDiv = document.createElement('div');
+                partDiv.className = `part part-${part.name}`;
+                partDiv.style.animationDelay = `${index * 0.1}s`;
+                partDiv.innerHTML = `
+                    ${part.name}
+                    <div class="part-details">${part.bars} bars ${part.timeSignature}</div>
+                `;
+                sequenceDiv.appendChild(partDiv);
+            });
+            
+            // Calculate stats
+            const totalBars = sequence.reduce((sum, part) => sum + part.bars, 0);
+            const totalBeats = sequence.reduce((sum, part) => sum + part.beats, 0);
+            
+            // Display time signatures used
+            const uniqueSignatures = [...new Set(sequence.map(p => p.timeSignature))];
+            timeSignaturesDiv.textContent = `Time signatures: ${uniqueSignatures.join(', ')}`;
+            
+            // Update stats
+            totalBarsDiv.textContent = totalBars;
+            totalBeatsDiv.textContent = totalBeats;
+            partCountDiv.textContent = sequence.length;
+            
+            // Show result
+            resultDiv.classList.add('show');
+        }
+
+        // Generate on load with default BPM
+        window.onload = function() {
+            generateSequence();
+        };
+    </script>
+</body>
+</html>
