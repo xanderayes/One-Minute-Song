@@ -133,8 +133,8 @@
         
         <div class="input-group">
             <label for="targetNumber">Enter a target number:</label>
-            <input type="number" id="targetNumber" placeholder="e.g., 100" min="1">
-            <div class="error" id="errorMessage">Please enter a valid positive integer</div>
+            <input type="number" id="targetNumber" placeholder="e.g., 100" min="2">
+            <div class="error" id="errorMessage">Please enter a valid integer (minimum 2)</div>
         </div>
 
         <button onclick="generateSequence()">Generate Sequence</button>
@@ -157,54 +157,125 @@
             const target = parseInt(input.value);
 
             // Validation
-            if (isNaN(target) || target < 1) {
+            if (isNaN(target) || target < 2) {
                 errorDiv.classList.add('show');
                 resultDiv.classList.remove('show');
                 return;
             }
 
             errorDiv.classList.remove('show');
+            errorDiv.textContent = 'Please enter a valid integer (minimum 2)';
 
             // Generate random sequence
             const sequence = generateRandomSequence(target);
-            
+
+            if (!sequence) {
+                errorDiv.textContent = 'Target too small for the constraints';
+                errorDiv.classList.add('show');
+                resultDiv.classList.remove('show');
+                return;
+            }
+
             // Display results
-            sequenceDiv.textContent = sequence.join(' + ');
+            sequenceDiv.textContent = sequence.map(formatNumber).join(' + ');
             sumDiv.textContent = `= ${sequence.reduce((a, b) => a + b, 0)}`;
             resultDiv.classList.add('show');
         }
 
-        function generateRandomSequence(target) {
-            // Determine number of parts (between 2 and min(10, target))
-            const maxParts = Math.min(10, target);
-            const numParts = Math.floor(Math.random() * (maxParts - 1)) + 2;
-
-            // Generate random split points
-            const sequence = [];
-            let remaining = target;
-
-            for (let i = 0; i < numParts - 1; i++) {
-                // Each part should be at least 1, and leave enough for remaining parts
-                const maxForThisPart = remaining - (numParts - i - 1);
-                const part = Math.floor(Math.random() * (maxForThisPart - 1)) + 1;
-                sequence.push(part);
-                remaining -= part;
+        function formatNumber(num) {
+            if (num > 7) {
+                const fours = Math.floor(num / 4);
+                const remainder = num - (fours * 4);
+                if (remainder === 0) {
+                    return `(${fours} * 4)`;
+                } else {
+                    return `(${fours} * 4 + ${remainder})`;
+                }
             }
-
-            // Add the remaining as the last part
-            sequence.push(remaining);
-
-            // Shuffle the sequence for randomness
-            return shuffleArray(sequence);
+            return num.toString();
         }
 
-        function shuffleArray(array) {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        function generateRandomSequence(target) {
+            // Validate target is at least 1.5
+            if (target < 1.5) {
+                return null;
             }
-            return shuffled;
+
+            // Try to generate a valid sequence
+            let maxAttempts = 100;
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                const result = tryGenerateSequence(target);
+                if (result) return result;
+            }
+            
+            // Fallback: simple sequence if all attempts fail
+            return [target];
+        }
+
+        function tryGenerateSequence(target) {
+            // Generate exactly 3 unique numbers (integers or halves)
+            const uniqueNumbers = new Set();
+            const maxVal = Math.max(0.5, target / 2);
+
+            while (uniqueNumbers.size < 3) {
+                // Generate a random number between 0.5 and maxVal
+                const rawNum = Math.random() * (maxVal - 0.5) + 0.5;
+                // Round to nearest 0.5
+                const roundedNum = Math.round(rawNum * 2) / 2;
+                uniqueNumbers.add(roundedNum);
+            }
+
+            const numbers = Array.from(uniqueNumbers);
+            const minNumber = Math.min(...numbers);
+
+            // Build sequence using only these 3 numbers, max 10 numbers total
+            const sequence = [];
+            let remaining = target;
+            const maxNumbers = 10;
+
+            while (remaining > 0) {
+                // Check if we've reached max numbers
+                if (sequence.length >= maxNumbers) {
+                    return null; // Too many numbers
+                }
+
+                // Filter numbers that are <= remaining
+                const validNumbers = numbers.filter(n => n <= remaining);
+
+                if (validNumbers.length === 0) {
+                    return null; // Failed to build sequence
+                }
+
+                // Pick a random valid number
+                const chosen = validNumbers[Math.floor(Math.random() * validNumbers.length)];
+                sequence.push(chosen);
+                remaining -= chosen;
+
+                // Prevent infinite loops with very small remaining
+                if (remaining < minNumber && remaining > 0) {
+                    // Try to adjust the last element
+                    if (sequence.length > 0) {
+                        const last = sequence.pop();
+                        remaining += last;
+                        // Use the exact remaining if it's a valid number
+                        if (numbers.includes(remaining) || remaining === 0) {
+                            if (remaining > 0) sequence.push(remaining);
+                            remaining = 0;
+                        } else {
+                            return null;
+                        }
+                    } else {
+                        return null;
+                    }
+                }
+            }
+
+            // Ensure we have at least 2 numbers if possible
+            if (sequence.length === 1 && target >= minNumber * 2) {
+                return null;
+            }
+
+            return sequence.length >= 2 ? sequence : null;
         }
 
         // Allow Enter key to trigger generation
