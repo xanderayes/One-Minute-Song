@@ -1,5 +1,6 @@
 import random
 import sys
+from mido import Message, MidiFile, MidiTrack, MetaMessage, bpm2tempo
 
 
 def find_gcd(a: int, b: int) -> int:
@@ -107,7 +108,79 @@ def generate_random_sequence(target: float):
     return [target]
 
 
-def generate_sequence(target: int):
+def parse_bar_to_beats(bar_str: str) -> list:
+    """Parse bar notation string and return list of beat durations."""
+    beats = []
+    
+    # Handle simple fraction (e.g., "5/4")
+    if '/' in bar_str and '(' not in bar_str:
+        parts = bar_str.split('/')
+        numerator = float(parts[0])
+        denominator = float(parts[1])
+        beats.append(numerator / denominator)
+        return beats
+    
+    # Handle complex notation (e.g., "(4 * 4/4 + 3/8)")
+    if '(' in bar_str and ')' in bar_str:
+        content = bar_str[1:-1]  # Remove parentheses
+        components = content.split(' + ')
+        
+        for comp in components:
+            comp = comp.strip()
+            if '*' in comp:
+                # Handle multiplication (e.g., "4 * 4/4")
+                mult_parts = comp.split(' * ')
+                count = int(mult_parts[0].strip())
+                frac_parts = mult_parts[1].strip().split('/')
+                numerator = float(frac_parts[0])
+                denominator = float(frac_parts[1])
+                beat_duration = numerator / denominator
+                beats.extend([beat_duration] * count)
+            else:
+                # Handle simple fraction (e.g., "3/8")
+                frac_parts = comp.split('/')
+                numerator = float(frac_parts[0])
+                denominator = float(frac_parts[1])
+                beats.append(numerator / denominator)
+    
+    return beats
+
+
+def generate_midi(sequence: list, bpm: int):
+    """Generate MIDI file from sequence with given BPM."""
+    mid = MidiFile()
+    track = MidiTrack()
+    mid.tracks.append(track)
+    
+    # Set tempo
+    track.append(MetaMessage('set_tempo', tempo=bpm2tempo(bpm)))
+    
+    # MIDI parameters
+    note = 60  # Middle C
+    velocity = 64
+    
+    current_time = 0
+    
+    for num in sequence:
+        bar_str = format_bar(num)
+        beats = parse_bar_to_beats(bar_str)
+        
+        for beat_duration in beats:
+            # Convert beats to ticks (assuming 480 ticks per quarter note)
+            ticks = int(beat_duration * 480)
+            
+            # Note on
+            track.append(Message('note_on', note=note, velocity=velocity, time=current_time))
+            # Note off
+            track.append(Message('note_off', note=note, velocity=velocity, time=ticks))
+            
+            current_time = 0  # Reset time after first note
+    
+    mid.save('output.midi')
+    print(f"MIDI file saved as output.midi (BPM: {bpm})")
+
+
+def generate_sequence(target: int, bpm: int = 120):
     """Main function to generate and display sequence."""
     if target < 2:
         print("Error: Please enter a valid integer (minimum 2)")
@@ -136,6 +209,9 @@ def generate_sequence(target: int):
     # Display bars
     bars = ' + '.join(format_bar(num) for num in sequence)
     print(f"Bars: {bars}")
+    
+    # Generate MIDI file
+    generate_midi(sequence, bpm)
 
 
 def main():
@@ -146,14 +222,21 @@ def main():
         except ValueError:
             print("Error: Please provide a valid integer")
             sys.exit(1)
+        
+        bpm = int(sys.argv[2]) if len(sys.argv) > 2 else 120
     else:
         try:
             target = int(input("Enter a target number: "))
         except ValueError:
             print("Error: Please enter a valid integer")
             sys.exit(1)
+        
+        try:
+            bpm = int(input("Enter BPM (default 120): ") or "120")
+        except ValueError:
+            bpm = 120
     
-    generate_sequence(target)
+    generate_sequence(target, bpm)
 
 
 if __name__ == "__main__":
