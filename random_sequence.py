@@ -134,7 +134,8 @@ def parse_bar_to_beats(bar_str: str) -> list:
                 frac_parts = mult_parts[1].strip().split('/')
                 numerator = float(frac_parts[0])
                 denominator = float(frac_parts[1])
-                beat_duration = numerator / denominator
+                # Treat 4/4 as 1 beat (not 4 beats)
+                beat_duration = 1.0 if numerator == 4 and denominator == 4 else numerator / denominator
                 beats.extend([beat_duration] * count)
             else:
                 # Handle simple fraction (e.g., "3/8")
@@ -162,19 +163,16 @@ def generate_midi(sequence: list, bpm: int):
     current_time = 0
     
     for num in sequence:
-        bar_str = format_bar(num)
-        beats = parse_bar_to_beats(bar_str)
+        # Each number in sequence represents that many beats
+        # Convert beats to ticks (480 ticks per quarter note = 1 beat)
+        ticks = int(num * 480)
         
-        for beat_duration in beats:
-            # Convert beats to ticks (assuming 480 ticks per quarter note)
-            ticks = int(beat_duration * 480)
-            
-            # Note on
-            track.append(Message('note_on', note=note, velocity=velocity, time=current_time))
-            # Note off
-            track.append(Message('note_off', note=note, velocity=velocity, time=ticks))
-            
-            current_time = 0  # Reset time after first note
+        # Note on
+        track.append(Message('note_on', note=note, velocity=velocity, time=current_time))
+        # Note off
+        track.append(Message('note_off', note=note, velocity=velocity, time=ticks))
+        
+        current_time = 0  # Reset time after first note
     
     mid.save('output.midi')
     print(f"MIDI file saved as output.midi (BPM: {bpm})")
