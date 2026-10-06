@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Sequence Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 24px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 18px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 24px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .sequence {
+            font-size: 24px;
+            color: #333;
+            font-weight: 600;
+            word-wrap: break-word;
+        }
+
+        .sum {
+            margin-top: 12px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Random Sequence Generator</h1>
+        
+        <div class="input-group">
+            <label for="targetNumber">Enter a target number:</label>
+            <input type="number" id="targetNumber" placeholder="e.g., 100" min="1">
+            <div class="error" id="errorMessage">Please enter a valid positive integer</div>
+        </div>
+
+        <button onclick="generateSequence()">Generate Sequence</button>
+
+        <div class="result" id="result">
+            <div class="result-label">Random sequence:</div>
+            <div class="sequence" id="sequence"></div>
+            <div class="sum" id="sum"></div>
+        </div>
+    </div>
+
+    <script>
+        function generateSequence() {
+            const input = document.getElementById('targetNumber');
+            const errorDiv = document.getElementById('errorMessage');
+            const resultDiv = document.getElementById('result');
+            const sequenceDiv = document.getElementById('sequence');
+            const sumDiv = document.getElementById('sum');
+
+            const target = parseInt(input.value);
+
+            // Validation
+            if (isNaN(target) || target < 1) {
+                errorDiv.classList.add('show');
+                resultDiv.classList.remove('show');
+                return;
+            }
+
+            errorDiv.classList.remove('show');
+
+            // Generate random sequence
+            const sequence = generateRandomSequence(target);
+            
+            // Display results
+            sequenceDiv.textContent = sequence.join(' + ');
+            sumDiv.textContent = `= ${sequence.reduce((a, b) => a + b, 0)}`;
+            resultDiv.classList.add('show');
+        }
+
+        function generateRandomSequence(target) {
+            // Determine number of parts (between 2 and min(10, target))
+            const maxParts = Math.min(10, target);
+            const numParts = Math.floor(Math.random() * (maxParts - 1)) + 2;
+
+            // Generate random split points
+            const sequence = [];
+            let remaining = target;
+
+            for (let i = 0; i < numParts - 1; i++) {
+                // Each part should be at least 1, and leave enough for remaining parts
+                const maxForThisPart = remaining - (numParts - i - 1);
+                const part = Math.floor(Math.random() * (maxForThisPart - 1)) + 1;
+                sequence.push(part);
+                remaining -= part;
+            }
+
+            // Add the remaining as the last part
+            sequence.push(remaining);
+
+            // Shuffle the sequence for randomness
+            return shuffleArray(sequence);
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Allow Enter key to trigger generation
+        document.getElementById('targetNumber').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generateSequence();
+            }
+        });
+    </script>
+</body>
+</html>
