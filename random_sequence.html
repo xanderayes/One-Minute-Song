@@ -145,6 +145,8 @@
             <div class="sum" id="sum"></div>
             <div class="result-label" style="margin-top: 16px;">Parts:</div>
             <div class="sequence" id="parts"></div>
+            <div class="result-label" style="margin-top: 16px;">Bars:</div>
+            <div class="sequence" id="bars"></div>
         </div>
     </div>
 
@@ -156,6 +158,7 @@
             const sequenceDiv = document.getElementById('sequence');
             const sumDiv = document.getElementById('sum');
             const partsDiv = document.getElementById('parts');
+            const barsDiv = document.getElementById('bars');
 
             const target = parseInt(input.value);
 
@@ -191,6 +194,9 @@
             });
             partsDiv.textContent = sequence.map(num => letterMap[num]).join(' ');
 
+            // Display bars
+            barsDiv.textContent = sequence.map(formatBar).join(' + ');
+
             resultDiv.classList.add('show');
         }
 
@@ -205,6 +211,37 @@
                 }
             }
             return num.toString();
+        }
+
+        function formatBar(num) {
+            if (num > 7) {
+                const fours = Math.floor(num / 4);
+                const remainder = num - (fours * 4);
+                const remainderFraction = formatToFraction(remainder);
+                if (remainder === 0) {
+                    return `(${fours} * 4/4)`;
+                } else {
+                    return `(${fours} * 4/4 + ${remainderFraction})`;
+                }
+            }
+            return formatToFraction(num);
+        }
+
+        function formatToFraction(num) {
+            // Convert to eighths: multiply by 2, denominator is 8
+            const numerator = Math.round(num * 2);
+            const denominator = 8;
+
+            // Simplify the fraction
+            const gcd = findGCD(numerator, denominator);
+            const simplifiedNum = numerator / gcd;
+            const simplifiedDen = denominator / gcd;
+
+            return `${simplifiedNum}/${simplifiedDen}`;
+        }
+
+        function findGCD(a, b) {
+            return b === 0 ? a : findGCD(b, a % b);
         }
 
         function generateRandomSequence(target) {
