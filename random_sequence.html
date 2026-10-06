@@ -143,6 +143,8 @@
             <div class="result-label">Random sequence:</div>
             <div class="sequence" id="sequence"></div>
             <div class="sum" id="sum"></div>
+            <div class="result-label" style="margin-top: 16px;">Parts:</div>
+            <div class="sequence" id="parts"></div>
         </div>
     </div>
 
@@ -153,6 +155,7 @@
             const resultDiv = document.getElementById('result');
             const sequenceDiv = document.getElementById('sequence');
             const sumDiv = document.getElementById('sum');
+            const partsDiv = document.getElementById('parts');
 
             const target = parseInt(input.value);
 
@@ -179,6 +182,15 @@
             // Display results
             sequenceDiv.textContent = sequence.map(formatNumber).join(' + ');
             sumDiv.textContent = `= ${sequence.reduce((a, b) => a + b, 0)}`;
+
+            // Display parts with letters
+            const uniqueNumbers = [...new Set(sequence)];
+            const letterMap = {};
+            uniqueNumbers.forEach((num, index) => {
+                letterMap[num] = String.fromCharCode(65 + index); // A, B, C, ...
+            });
+            partsDiv.textContent = sequence.map(num => letterMap[num]).join(' ');
+
             resultDiv.classList.add('show');
         }
 
